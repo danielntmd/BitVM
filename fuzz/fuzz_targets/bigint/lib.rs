@@ -4,6 +4,8 @@ use bitvm::bigint::{BigIntImpl, U254, U256, U64};
 
 pub type U384 = BigIntImpl<384, 29>;
 
+pub const BIGINT_TYPE_LAST_INDEX: u32 = 3;
+
 #[derive(Debug)]
 pub enum BigIntType {
     U64(U64),

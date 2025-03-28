@@ -7,9 +7,7 @@ use libfuzzer_sys::fuzz_target;
 
 use bitvm::execute_script_buf;
 use bitvm::bigint::{std::bigint_verify_output_script, U254, U256, U64};
-use bitvm_fuzz::{match_bigint_type, BigIntType, U384};
-
-pub const BIGINT_TYPE_LAST_INDEX: u32 = 3;
+use bitvm_fuzz::{match_bigint_type, BigIntType, U384, BIGINT_TYPE_LAST_INDEX};
 
 // We are 99.999% confident with 500 limb transformations that all 31 values are covered, assuming random distribution (see inclusion-exclusion principle)
 // Note: This doesn't consider every limb permutation
