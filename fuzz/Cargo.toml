@@ -47,3 +47,10 @@ path = "fuzz_targets/bigint/bigint_sub.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "bigint_mul"
+path = "fuzz_targets/bigint/bigint_mul.rs"
+test = false
+doc = false
+bench = false
