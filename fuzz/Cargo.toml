@@ -42,8 +42,8 @@ doc = false
 bench = false
 
 [[bin]]
-name = "bigint_sub"
-path = "fuzz_targets/bigint/bigint_sub.rs"
+name = "bigint_inv"
+path = "fuzz_targets/bigint/bigint_inv.rs"
 test = false
 doc = false
 bench = false
@@ -54,3 +54,11 @@ path = "fuzz_targets/bigint/bigint_mul.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "bigint_sub"
+path = "fuzz_targets/bigint/bigint_sub.rs"
+test = false
+doc = false
+bench = false
+

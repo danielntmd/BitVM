@@ -37,10 +37,10 @@ impl BigIntConfig {
         let c = BigUint::from_slice(self.c.as_ref());
 
         let modulo = BigUint::one().shl(self.bigint_type.n_bits());
-        a = (a.clone() + b).rem(modulo.clone());
-        a = (a.clone() + a).rem(modulo.clone());
-        a = (a.clone() + c).rem(modulo.clone());
-        a = (a.clone() + a).rem(modulo.clone()); 
+        a = (&a + b).rem(&modulo);
+        a = (&a + &a).rem(&modulo);
+        a = (&a + c).rem(&modulo);
+        a = (&a + &a).rem(&modulo); 
 
         let push_answer = match_bigint_type!(self.bigint_type, push_u32_le, &a.to_u32_digits());
         bytes.extend_from_slice(push_answer.compile().as_bytes());
