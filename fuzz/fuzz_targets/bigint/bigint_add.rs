@@ -9,38 +9,43 @@ use libfuzzer_sys::fuzz_target;
 use num_bigint::BigUint;
 use num_traits::identities::One;
 
-use bitvm::execute_script_buf;
 use bitvm::bigint::{std::bigint_verify_output_script, U254, U256, U64};
-use bitvm_fuzz::{match_bigint_type, BigIntType, U384, BIGINT_TYPE_LAST_INDEX};
+use bitvm::execute_script_buf;
+use bitvm_fuzz::{match_bigint_type, BigIntType, BIGINT_TYPE_LAST_INDEX, U384};
 
 #[derive(Debug)]
 pub struct BigIntConfig {
-    pub a: Vec<u32>,
-    pub b: Vec<u32>,
-    pub c: Vec<u32>,
+    pub value_a: Vec<u32>,
+    pub value_b: Vec<u32>,
     pub bigint_type: BigIntType,
 }
 
 impl BigIntConfig {
     pub fn create_add_script(&self) -> Vec<u8> {
-        let mut bytes = match_bigint_type!(self.bigint_type, push_u32_le, self.a.as_ref()).compile().to_bytes();
-        bytes.extend_from_slice(match_bigint_type!(self.bigint_type, push_u32_le, self.b.as_ref()).compile().as_bytes());
-        bytes.extend_from_slice(match_bigint_type!(self.bigint_type, push_u32_le, self.c.as_ref()).compile().as_bytes());
-        
-        bytes.extend_from_slice(match_bigint_type!(self.bigint_type, add, 2, 1).compile().as_bytes()); // a + b
-        bytes.extend_from_slice(match_bigint_type!(self.bigint_type, double, 0).compile().as_bytes()); // 2(a + b)
-        bytes.extend_from_slice(match_bigint_type!(self.bigint_type, add, 1, 0).compile().as_bytes()); // 2(a + b) + c
-        bytes.extend_from_slice(match_bigint_type!(self.bigint_type, double, 0).compile().as_bytes()); // 2(2(a + b) + c)
+        let mut bytes = match_bigint_type!(self.bigint_type, push_u32_le, self.value_a.as_ref())
+            .compile()
+            .to_bytes();
+        bytes.extend_from_slice(
+            match_bigint_type!(self.bigint_type, push_u32_le, self.value_b.as_ref())
+                .compile()
+                .as_bytes(),
+        );
+        bytes.extend_from_slice(
+            match_bigint_type!(self.bigint_type, add, 0, 1)
+                .compile()
+                .as_bytes(),
+        ); // a + b
+        bytes.extend_from_slice(
+            match_bigint_type!(self.bigint_type, double, 0)
+                .compile()
+                .as_bytes(),
+        ); // 2(a + b)
 
-        let mut a = BigUint::from_slice(self.a.as_ref());
-        let b = BigUint::from_slice(self.b.as_ref());
-        let c = BigUint::from_slice(self.c.as_ref());
-
+        let mut a = BigUint::from_slice(self.value_a.as_ref());
+        let b = BigUint::from_slice(self.value_b.as_ref());
         let modulo = BigUint::one().shl(self.bigint_type.n_bits());
         a = (&a + b).rem(&modulo);
         a = (&a + &a).rem(&modulo);
-        a = (&a + c).rem(&modulo);
-        a = (&a + &a).rem(&modulo); 
 
         let push_answer = match_bigint_type!(self.bigint_type, push_u32_le, &a.to_u32_digits());
         bytes.extend_from_slice(push_answer.compile().as_bytes());
@@ -52,22 +57,12 @@ impl BigIntConfig {
 impl<'a> Arbitrary<'a> for BigIntConfig {
     fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self> {
         let bigint_type = BigIntType::from_index(u.int_in_range(0..=BIGINT_TYPE_LAST_INDEX)?);
-        let n_bits = bigint_type.n_bits();
-        let n_limbs = n_bits.div_ceil(bigint_type.limb_size());
-        let a = (0..n_limbs)
-            .map(|_| u.arbitrary())
-            .collect::<Result<Vec<u32>>>()?;
-        let b = (0..n_limbs)
-            .map(|_| u.arbitrary())
-            .collect::<Result<Vec<u32>>>()?;
-        let c = (0..n_limbs)
-            .map(|_| u.arbitrary())
-            .collect::<Result<Vec<u32>>>()?;
+        let value_a = bigint_type.generate_arbitrary_bigint(u)?;
+        let value_b = bigint_type.generate_arbitrary_bigint(u)?;
 
         Ok(BigIntConfig {
-            a,
-            b, 
-            c,
+            value_a,
+            value_b,
             bigint_type,
         })
     }
@@ -76,7 +71,7 @@ impl<'a> Arbitrary<'a> for BigIntConfig {
 fuzz_target!(|message: BigIntConfig| {
     let mut bytes = message.create_add_script();
     bytes.extend_from_slice(
-        bigint_verify_output_script(message.a.len() as u32)
+        bigint_verify_output_script(message.bigint_type.n_limbs())
             .compile()
             .as_bytes(),
     );
